@@ -10,3 +10,11 @@ The script installs docker and uses it to download an alpine linux file system. 
 The script creates a network namespace, then uses `unshare` to launch a new process in its own namespace. You'll be able to view the effects of this via the containers view of `PID`, the mount namespace, and the `UTS` namespace (via hostname). 
 
 While the script sets up cgroups, it doesn't really demonstrate how they're used. It also doesn't include setting up features like seccomp. The point of this is to get a basic understanding of how linux namespaces power modern container technology to create isolation.
+
+## References
+I used these sites to help build the full working demo.
+
+https://blog.nicolasmesa.co/posts/2018/08/container-creation-using-namespaces-and-bash/
+https://josephmuia.ca/2018-05-16-net-namespaces-veth-nat/
+https://www.youtube.com/watch?v=sK5i-N34im8
+https://stackoverflow.com/questions/42805494/run-multiple-commands-in-network-namespace
