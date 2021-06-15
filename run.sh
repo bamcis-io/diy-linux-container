@@ -162,7 +162,8 @@ enter_container() {
     PID=$!
 }
 
-create_net_ns() {
+# not currently used, but can use docker bridge for internet connectivity
+create_net_ns_with_docker() {
     # 1/ add new network namespace
     # 2/ set local loopback to up
     # 3/ ping localhost (optional)
@@ -205,6 +206,53 @@ create_net_ns() {
     #sudo ip netns exec $NS ping -c 4 8.8.8.8 # 12/ ping the internet
 }
 
+# uses iptables to do NAT
+create_net_ns() {
+    # 1/ add new network namespace
+    # 2/ set local loopback to up
+    # 3/ ping localhost (optional)
+    # 4/ create a veth pair on host
+    # 5/ move veth to new net namespace
+    # 6/ assign IP to host veth
+    # 7/ assign IP to container veth
+    # 8/ enable packet forwarding
+    # 9/ add default route in container
+    # 10/ ping container from host (optional)
+    # 11/ ping host from container (optional)
+    # 12/ ping internet (optional)
+
+    NS=""
+
+    if [ $? -lt 2 ] 
+    then
+        NS="netns1"
+        sudo ip netns add $NS # create new network namespace
+    else
+        NS=$1 # otherwise it's already created and the name was provided
+    fi
+
+    sudo ip netns exec $NS ip link set lo up # 2/ bring up loopback in container namespace
+    #sudo ip netns exec $NS ping -c 2 localhost # 3/ ping localhost
+
+    sudo ip link add name h$NS type veth peer name c$NS # 4/ create host and container virtual interfaces
+    sudo ip link set c$NS netns $NS # 5/ move the virtual device to the new namespace
+
+    sudo ifconfig h$NS 192.168.100.2/24 up # 6/ assign host IP to virtual device
+    sudo ip netns exec $NS ifconfig c$NS 192.168.100.3/24 up # 7/ assign container IP to virtual device
+
+    sudo sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward" # 8/ enable kernel to forward packets from one interface to another
+    sudo iptables -A FORWARD -o eth0 -i h$NS -j ACCEPT
+    sudo iptables -A FORWARD -i eth0 -o h$NS -j ACCEPT
+    sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE # packets from this network should be sent to eth0
+
+    #sudo ip link set h$NS master docker0 up # 8/ join host interface to docker bridge
+    sudo ip netns exec $NS ip route add default via 192.168.100.2 # 9/ add default route in container
+
+    #ping -c 2 192.168.100.3 # 10/ ping container from host
+    #sudo ip netns exec $NS ping -c 2 192.168.100.2 # 11/ ping host from container
+    #sudo ip netns exec $NS ping -c 4 8.8.8.8 # 12/ ping the internet
+}
+
 # First setup the host environment
 echo "Setting up environment"
 environment_setup &> /dev/null
@@ -223,6 +271,7 @@ trap "environment_cleanup $CID $PID" SIGINT SIGTERM
 sleep 5
 
 # Display the host and container views
+echo ""
 echo "Original hostname: $(hostname)"
 echo ""
 echo "Host file system:"
