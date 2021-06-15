@@ -46,10 +46,10 @@ setup_cgroups() {
     sudo mkdir -p /sys/fs/cgroup/cpu/tupperware
 
     # set 100MB memory limit
-    #echo 100M > /sys/fs/cgroup/memory/tupperware/memory.limit_in_bytes
+    sudo /bin/sh -c "echo 100M > /sys/fs/cgroup/memory/tupperware/memory.limit_in_bytes"
     
     # disable swap
-    #echo "0" > /sys/fs/cgroup/memory/tupperware/memory.swappiness
+    sudo /bin/sh -c "echo `0` > /sys/fs/cgroup/memory/tupperware/memory.swappiness"
 }
 
 environment_setup() {
@@ -243,7 +243,7 @@ create_net_ns() {
     sudo ifconfig h$NS 192.168.100.2/24 up # 6/ assign host IP to virtual device
     sudo ip netns exec $NS ifconfig c$NS 192.168.100.3/24 up # 7/ assign container IP to virtual device
 
-    sudo sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward" # 8/ enable kernel to forward packets from one interface to another
+    sudo /bin/sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward" # 8/ enable kernel to forward packets from one interface to another
     sudo iptables -A FORWARD -o eth0 -i h$NS -j ACCEPT
     sudo iptables -A FORWARD -i eth0 -o h$NS -j ACCEPT
     sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE # packets from this network should be sent to eth0
