@@ -165,15 +165,16 @@ enter_container() {
 create_net_ns() {
     # 1/ add new network namespace
     # 2/ set local loopback to up
-    # 3/ ping localhost
+    # 3/ ping localhost (optional)
     # 4/ create a veth pair on host
     # 5/ move veth to new net namespace
     # 6/ assign IP to host veth
     # 7/ assign IP to container veth
     # 8/ join host to docker and bring up
     # 9/ add default route in container
-    # 10/ ping container from host
-    # 11/ ping host from container
+    # 10/ ping container from host (optional)
+    # 11/ ping host from container (optional)
+    # 12/ ping internet (optional)
 
     NS=""
 
